@@ -272,12 +272,10 @@
   var byId = new Map(restaurants.map(function (r) { return [r.id, r]; }));
 
   var REGION_GROUPS = [
-    { title: "Norte", provincias: ["Minho", "Douro Litoral", "Douro", "Trás-os-Montes"] },
-    { title: "Beiras", provincias: ["Beira Litoral", "Beira Alta", "Beira Baixa"] },
-    { title: "Oeste e Tejo", provincias: ["Estremadura", "Ribatejo", "Grande Lisboa", "Setúbal"] },
-    { title: "Sul", provincias: ["Alentejo", "Algarve"] },
-    { title: "Ilhas", provincias: ["Madeira", "Açores"] },
-    { title: "Espanha", provincias: ["Espanha"] }
+    { title: "Norte", provincias: ["Minho", "Trás-os-Montes", "Tâmega, Sousa e Basto", "Grande Porto"] },
+    { title: "Centro", provincias: ["Beira", "Oeste e Ribatejo"] },
+    { title: "Lisboa", provincias: ["Grande Lisboa"] },
+    { title: "Sul", provincias: ["Alentejo", "Algarve"] }
   ];
 
   var TIPO_ORDER = ["tasco","taberna","clássico","cervejaria","churrasqueira","marisqueira","petiscos","pastelaria","date / contemporâneo","fine dining","hotel-restaurante","incerto"];
@@ -373,7 +371,7 @@
   }
 
   // ---- Favorites (localStorage) ----
-  var FAV_KEY = "guia-porta-10a-favoritos-v1";
+  var FAV_KEY = "as-100-tascas-favoritos-v1";
   function loadFavs() {
     try { return JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); } catch (e) { return []; }
   }
@@ -389,7 +387,7 @@
   }
 
   // ---- "Onde estás?" (texto livre, sem geolocalização) ----
-  var LOC_KEY = "guia-porta-10a-local-v1";
+  var LOC_KEY = "as-100-tascas-local-v1";
   function loadLoc() {
     try { return localStorage.getItem(LOC_KEY) || ""; } catch (e) { return ""; }
   }
@@ -738,7 +736,7 @@
   }
 
   // ---- Geocodificação sob demanda (Nominatim / OpenStreetMap) ----
-  var GEO_KEY = "guia-porta-10a-geo-v1";
+  var GEO_KEY = "as-100-tascas-geo-v1";
   function loadGeoCache() {
     try { return JSON.parse(localStorage.getItem(GEO_KEY) || "{}"); } catch (e) { return {}; }
   }
