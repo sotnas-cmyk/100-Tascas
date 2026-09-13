@@ -238,6 +238,12 @@
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     font-size: 0.78rem; color: var(--ink-soft); text-align: center; padding: 0 1rem;
   }
+  .mini-map-approx {
+    position: absolute; left: 0.5rem; bottom: 0.5rem; z-index: 400;
+    background: rgba(42,33,24,0.82); color: #fbf3df; font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; padding: 0.25rem 0.55rem; border-radius: 999px;
+    pointer-events: none;
+  }
   .contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
   .contact-row a, .contact-row .disabled {
     display: flex; align-items: center; justify-content: center; gap: 0.4rem; height: 2.5rem; border-radius: 9px;
@@ -749,16 +755,40 @@
   function geocode(r) {
     var cached = geoCache[r.id];
     if (cached) return Promise.resolve(cached);
-    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(r.mapsQuery);
-    return fetch(url, { headers: { "Accept": "application/json" } })
-      .then(function (res) { if (!res.ok) throw new Error("geocode failed"); return res.json(); })
-      .then(function (data) {
-        if (!data || !data.length) throw new Error("sem resultado");
-        var coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-        geoCache[r.id] = coords;
-        saveGeoCache(geoCache);
-        return coords;
-      });
+
+    // Do mais específico ao mais genérico: nome da rua e da casa podem não
+    // existir no OpenStreetMap para aldeias pequenas, por isso recuamos até
+    // à localidade/concelho se a busca mais detalhada não encontrar nada.
+    var candidates = [];
+    if (r.mapsQuery) candidates.push(r.mapsQuery);
+    if (r.localidade && r.zona) candidates.push(r.localidade + ", " + r.zona + ", Portugal");
+    if (r.zona) candidates.push(r.zona + ", Portugal");
+    if (r.localidade) candidates.push(r.localidade + ", Portugal");
+    // remove duplicados mantendo a ordem
+    var seen = {};
+    candidates = candidates.filter(function (c) {
+      if (seen[c]) return false;
+      seen[c] = true;
+      return true;
+    });
+
+    function tryQuery(i) {
+      if (i >= candidates.length) return Promise.reject(new Error("sem resultado"));
+      var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(candidates[i]);
+      return fetch(url, { headers: { "Accept": "application/json" } })
+        .then(function (res) { if (!res.ok) throw new Error("geocode failed"); return res.json(); })
+        .then(function (data) {
+          if (!data || !data.length) throw new Error("sem resultado");
+          return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), approximate: i > 0 };
+        })
+        .catch(function () { return tryQuery(i + 1); });
+    }
+
+    return tryQuery(0).then(function (coords) {
+      geoCache[r.id] = coords;
+      saveGeoCache(geoCache);
+      return coords;
+    });
   }
 
   function loadMiniMap(r) {
@@ -773,12 +803,19 @@
     geocode(r).then(function (coords) {
       if (state.selectedId !== r.id) return; // a gaveta já mudou entretanto
       container.innerHTML = "";
-      miniMapInstance = L.map(container, { attributionControl: true, zoomControl: false }).setView([coords.lat, coords.lon], 15);
+      var zoom = coords.approximate ? 13 : 15;
+      miniMapInstance = L.map(container, { attributionControl: true, zoomControl: false }).setView([coords.lat, coords.lon], zoom);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>'
       }).addTo(miniMapInstance);
       L.marker([coords.lat, coords.lon]).addTo(miniMapInstance);
+      if (coords.approximate) {
+        var note = document.createElement("div");
+        note.className = "mini-map-approx";
+        note.textContent = "Localização aproximada";
+        container.appendChild(note);
+      }
     }).catch(function () {
       if (state.selectedId !== r.id) return;
       container.innerHTML = '<div class="mini-map-status">Não foi possível localizar no mapa. Usa os links de "Como chegar" abaixo.</div>';
