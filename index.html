@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>As 100 Melhores Tascas de Portugal</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icon-512.png" sizes="512x512" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#17495a">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --bg: #e8dfc9;
+    --card: #fffaef;
+    --ink: #2a2118;
+    --ink-soft: #7a6a52;
+    --border: #ddccaa;
+    --primary: #17495a;
+    --primary-dark: #0d2e3a;
+    --primary-fg: #fbf3df;
+    --accent: #a8341f;
+    --accent-ink: #fbe9d9;
+    --accent-soft: rgba(168, 52, 31, 0.13);
+    --shadow: 0 1px 2px rgba(38,26,10,0.09), 0 1px 8px rgba(38,26,10,0.07);
+    --shadow-hover: 0 2px 4px rgba(38,26,10,0.11), 0 4px 18px rgba(38,26,10,0.13);
+    --radius: 14px;
+  }
+  /* toalha de oleado: quadrícula ténue + veladura de papel envelhecido */
+  body {
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(1200px 520px at 100% -12%, rgba(23,73,90,0.10), transparent 60%),
+      radial-gradient(900px 460px at -10% 10%, rgba(168,52,31,0.07), transparent 55%),
+      repeating-linear-gradient(90deg, rgba(60,42,18,0.05) 0, rgba(60,42,18,0.05) 1px, transparent 1px, transparent 27px),
+      repeating-linear-gradient(0deg, rgba(60,42,18,0.05) 0, rgba(60,42,18,0.05) 1px, transparent 1px, transparent 27px);
+    background-attachment: fixed;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .display {
+    font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  }
+  button { font-family: inherit; }
+  #app { min-height: 100dvh; padding-bottom: 4rem; }
+
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='52'%3E%3Cg fill='none' stroke='%23fbf3df' stroke-opacity='0.16' stroke-width='1'%3E%3Cpath d='M26 1 L51 26 L26 51 L1 26 Z'/%3E%3Ccircle cx='26' cy='26' r='9'/%3E%3C/g%3E%3C/svg%3E"),
+      linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background-size: 52px 52px, auto;
+    color: var(--primary-fg);
+    border-bottom: 3px solid var(--accent);
+  }
+  .header-inner {
+    max-width: 880px; margin: 0 auto; padding: 1rem 1.1rem 1.1rem;
+    display: flex; flex-direction: column; gap: 0.9rem;
+  }
+  .eyebrow-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
+  .eyebrow { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.75; }
+  .count { font-size: 0.85rem; font-variant-numeric: tabular-nums; opacity: 0.85; }
+  h1 { margin: 0.15rem 0 0; font-size: 2.1rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
+
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); opacity: 0.55; pointer-events: none; }
+  #search {
+    width: 100%; height: 2.75rem; border-radius: 10px; border: none;
+    padding: 0 2.6rem 0 2.5rem; font-size: 0.95rem;
+    background: rgba(255,255,255,0.94); color: var(--ink);
+  }
+  #search:focus { outline: 2px solid rgba(255,255,255,0.5); outline-offset: 1px; }
+  #search::placeholder { color: #8a7a5f; }
+  .clear-search {
+    position: absolute; right: 0.35rem; top: 50%; transform: translateY(-50%);
+    width: 2rem; height: 2rem; border: none; background: none; color: #6b5a42;
+    display: none; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer;
+  }
+  .clear-search.show { display: flex; }
+
+  .loc-wrap { position: relative; }
+  .loc-wrap svg { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); opacity: 0.55; pointer-events: none; }
+  #loc-input {
+    width: 100%; height: 2.5rem; border-radius: 10px; border: none;
+    padding: 0 2.4rem 0 2.5rem; font-size: 0.88rem;
+    background: rgba(255,255,255,0.85); color: var(--ink);
+  }
+  #loc-input:focus { outline: 2px solid rgba(255,255,255,0.5); outline-offset: 1px; }
+  #loc-input::placeholder { color: #cbb98f; }
+  .clear-loc {
+    position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%);
+    width: 1.8rem; height: 1.8rem; border: none; background: none; color: #fbf3df;
+    display: none; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer;
+  }
+  .clear-loc.show { display: flex; }
+  .loc-hint { margin: 0.3rem 0 0; font-size: 0.72rem; color: rgba(255,255,255,0.75); }
+
+  .decide-btn {
+    width: 100%; height: 2.75rem; border: none; border-radius: 10px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 0.92rem;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    transition: transform 0.12s ease;
+  }
+  .decide-btn:active { transform: scale(0.98); }
+
+  nav.tabs {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem;
+    background: rgba(255,255,255,0.12); border-radius: 10px; padding: 0.25rem;
+  }
+  nav.tabs button {
+    height: 2.4rem; border: none; border-radius: 7px; background: none; color: var(--primary-fg);
+    font-size: 0.88rem; font-weight: 500; cursor: pointer; opacity: 0.85;
+  }
+  nav.tabs button.active { background: var(--card); color: var(--ink); opacity: 1; box-shadow: var(--shadow); }
+
+  main { max-width: 880px; margin: 0 auto; padding: 1.4rem 1.1rem 2rem; }
+  .lede { max-width: 30rem; font-size: 0.92rem; line-height: 1.5; color: var(--ink-soft); margin: 0 0 1.4rem; }
+
+  .region-grid { display: grid; gap: 2rem; grid-template-columns: 1fr; }
+  @media (min-width: 700px) { .region-grid { grid-template-columns: 1fr 1fr; column-gap: 3.5rem; } }
+  .region-group h2 {
+    font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em;
+    color: var(--ink-soft); margin: 0 0 0.6rem;
+  }
+  .region-group ul { list-style: none; margin: 0; padding: 0; }
+  .region-row {
+    width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    background: none; border: none; text-align: left; padding: 0.6rem 0; cursor: pointer; color: var(--ink);
+    border-bottom: 1px solid var(--border);
+  }
+  .region-group ul li:last-child .region-row { border-bottom: none; }
+  .region-row.active { color: var(--primary-dark); }
+  .region-row .name { font-family: Georgia, serif; font-size: 1.2rem; font-weight: 600; letter-spacing: -0.01em; }
+  .region-row .n { color: var(--ink-soft); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+  .list-head { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .list-count { font-size: 0.88rem; color: var(--ink-soft); }
+  .list-count b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .clear-link { border: none; background: none; color: var(--primary-dark); font-weight: 600; font-size: 0.88rem; cursor: pointer; padding: 0.3rem 0; }
+
+  .chip-row { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.3rem; margin: 0 0 0.7rem; scrollbar-width: none; }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; height: 2.2rem; padding: 0 0.9rem; border-radius: 999px; border: none; cursor: pointer;
+    font-size: 0.85rem; font-weight: 500; background: var(--card); color: var(--ink); box-shadow: var(--shadow);
+  }
+  .chip.active { background: var(--primary); color: var(--primary-fg); }
+
+  .cards { list-style: none; margin: 0.4rem 0 0; padding: 0; display: grid; gap: 0.8rem; grid-template-columns: 1fr; }
+  @media (min-width: 700px) { .cards { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background-color: var(--card);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16  0 0 0 0 0.11  0 0 0 0 0.06  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    border-radius: var(--radius); padding: 0.85rem 0.9rem; box-shadow: var(--shadow);
+    transition: box-shadow 0.15s ease;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); }
+  .card-top { display: flex; align-items: flex-start; gap: 0.5rem; }
+  .card-main { flex: 1; min-width: 0; background: none; border: none; text-align: left; padding: 0.15rem 0.1rem; cursor: pointer; color: var(--ink); }
+  .card-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+  .card-title { font-family: Georgia, serif; font-size: 1.12rem; font-weight: 600; letter-spacing: -0.005em; }
+  .card-tipo { flex-shrink: 0; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .card-place { margin: 0.2rem 0 0; font-size: 0.86rem; color: var(--ink-soft); }
+  .card-spec { margin: 0.2rem 0 0; font-size: 0.88rem; line-height: 1.4; }
+  .card-uncertain { margin: 0.4rem 0 0; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); }
+  .fav-btn {
+    flex-shrink: 0; width: 2.5rem; height: 2.5rem; border-radius: 999px; border: none; background: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: var(--ink);
+  }
+  .fav-btn svg { width: 1.15rem; height: 1.15rem; }
+  .fav-btn.saved svg { fill: var(--accent); stroke: var(--accent); }
+  .row-label { margin: 0.7rem 0 0.35rem; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; }
+  .btn-row a {
+    display: flex; align-items: center; justify-content: center; height: 2.1rem; border-radius: 8px;
+    font-size: 0.78rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--ink);
+  }
+  .btn-row.maps a { background: var(--ink); color: var(--primary-fg); border-color: var(--ink); }
+  .btn-row a:hover { opacity: 0.85; }
+
+  .empty { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 2.5rem 1.5rem; text-align: center; }
+  .empty .title { font-family: Georgia, serif; font-size: 1.3rem; font-weight: 600; margin: 0 0 0.5rem; }
+  .empty .body { max-width: 22rem; margin: 0 auto; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.5; }
+
+  .quick-group h2 { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-soft); margin: 0 0 0.4rem; }
+  .quick-group { margin-bottom: 1.8rem; }
+  .quick-group ul { list-style: none; margin: 0; padding: 0; }
+  .quick-group li { border-bottom: 1px solid var(--border); }
+  .quick-group li:last-child { border-bottom: none; }
+  .quick-row {
+    width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    background: none; border: none; text-align: left; padding: 0.85rem 0.1rem; cursor: pointer; color: var(--ink);
+  }
+  .quick-row .want { display: block; font-size: 0.82rem; color: var(--ink-soft); }
+  .quick-row .label { display: block; font-family: Georgia, serif; font-size: 1.08rem; font-weight: 600; margin-top: 0.1rem; }
+  .quick-row svg { flex-shrink: 0; opacity: 0.5; }
+
+  /* Drawer */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(28,26,22,0.35); z-index: 50; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  #overlay.open { opacity: 1; pointer-events: auto; }
+  #drawer {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 51; margin: 0 auto; max-width: 34rem;
+    max-height: min(42rem, 92dvh);
+    background-color: var(--card);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16  0 0 0 0 0.11  0 0 0 0 0.06  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    border-radius: 18px 18px 0 0;
+    display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.25s cubic-bezier(.32,.72,0,1);
+  }
+  #drawer.open { transform: translateY(0); }
+  .drawer-handle { width: 2.5rem; height: 4px; border-radius: 999px; background: var(--border); margin: 0.75rem auto 0.4rem; flex-shrink: 0; }
+  .drawer-body { min-height: 0; flex: 1; overflow-y: auto; padding: 0.6rem 1.4rem calc(1.5rem + env(safe-area-inset-bottom)); }
+  .drawer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; }
+  .drawer-title { font-family: Georgia, serif; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; margin: 0; line-height: 1.15; }
+  .drawer-place { margin: 0.25rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+  .drawer-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.8rem 0 0; }
+  .tag { border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; background: var(--border); }
+  .tag.uncertain { background: var(--accent-soft); color: var(--accent-ink); }
+  .drawer-spec { margin: 1rem 0 0; font-size: 1rem; line-height: 1.5; }
+  .drawer-addr, .drawer-notes { margin: 0.65rem 0 0; font-size: 0.87rem; line-height: 1.5; color: var(--ink-soft); }
+  .mini-map {
+    margin: 0.85rem 0 0; height: 11rem; border-radius: 10px; overflow: hidden;
+    background: var(--border); position: relative;
+  }
+  .mini-map .leaflet-container { background: var(--border); font-family: inherit; }
+  .mini-map-status {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; color: var(--ink-soft); text-align: center; padding: 0 1rem;
+  }
+  .contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+  .contact-row a, .contact-row .disabled {
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem; height: 2.5rem; border-radius: 9px;
+    border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; text-decoration: none; color: var(--ink);
+  }
+  .contact-row .disabled { opacity: 0.4; }
+  .close-x { flex-shrink: 0; width: 2.4rem; height: 2.4rem; border-radius: 999px; border: none; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #drawer, .decide-btn, #overlay { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="overlay"></div>
+<div id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<script id="restaurants-data" type="application/json">[{"id": 1, "nome": "Casa Pêga", "provincia": "Minho", "zona": "Vila Nova de Famalicão", "localidade": "Antas", "morada": "Rua 8 de dezembro, 2316", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "252 374 175", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Pêga, Rua 8 de dezembro, 2316, Antas, Vila Nova de Famalicão, Portugal"}, {"id": 2, "nome": "Casa de Pasto de Pouve/a Quintinha", "provincia": "Minho", "zona": "Famalicão", "localidade": "Lugar de Pouve", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "252 375 491", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa de Pasto de Pouve/a Quintinha, Lugar de Pouve, Famalicão, Portugal"}, {"id": 3, "nome": "Casa Sousa", "provincia": "Minho", "zona": "Vila Nova de Famalicão", "localidade": "Balaída, Mouquim", "morada": "R. Doutor Orlando Guimarães, 217", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "252 312 295", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Sousa, R. Doutor Orlando Guimarães, 217, Balaída, Mouquim, Vila Nova de Famalicão, Portugal"}, {"id": 4, "nome": "Adega dos 25 Amigos", "provincia": "Minho", "zona": "Vila Nova de Famalicão", "localidade": "Landim", "morada": "Landim, Rua de São Brás", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "969 285 196", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega dos 25 Amigos, Landim, Rua de São Brás, Landim, Vila Nova de Famalicão, Portugal"}, {"id": 5, "nome": "Florêncio", "provincia": "Minho", "zona": "Guimarães", "localidade": "Azurém", "morada": "R. Nossa Senhora Madre de Deus", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "253 415 820; 929 204 666", "telefone": "253 415 820", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Florêncio, R. Nossa Senhora Madre de Deus, Azurém, Guimarães, Portugal"}, {"id": 6, "nome": "Casa Primavera Taberna Soares", "provincia": "Minho", "zona": "Viana do Castelo", "localidade": "Viana do Castelo", "morada": "Viana do Castelo, Rua Góis Pinto, 59", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "258 821 807", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Primavera Taberna Soares, Viana do Castelo, Rua Góis Pinto, 59, Viana do Castelo, Portugal"}, {"id": 7, "nome": "Casa Pancada", "provincia": "Minho", "zona": "Vieira do Minho", "localidade": "Mosteiro", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "253 647 262", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Pancada, Mosteiro, Vieira do Minho, Portugal"}, {"id": 8, "nome": "Ti Mélia", "provincia": "Minho", "zona": "Arcos de Valdevez", "localidade": "Sistelo", "morada": "Rua Visconde de Sistelo", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "967 516 796", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Ti Mélia, Rua Visconde de Sistelo, Sistelo, Arcos de Valdevez, Portugal"}, {"id": 9, "nome": "Taberna da Julinha", "provincia": "Trás-os-Montes", "zona": "Vila Nova de Foz Côa", "localidade": "Pocinho", "morada": "Largo da Ponte", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "965 398 826", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna da Julinha, Largo da Ponte, Pocinho, Vila Nova de Foz Côa, Portugal"}, {"id": 10, "nome": "Calça Curta", "provincia": "Trás-os-Montes", "zona": "Carrazeda de Ansiães", "localidade": "Foz Tua", "morada": "Avenida da Estação", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "278 685 255", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Calça Curta, Avenida da Estação, Foz Tua, Carrazeda de Ansiães, Portugal"}, {"id": 11, "nome": "O Lagar do Nicolau", "provincia": "Trás-os-Montes", "zona": "Mogadouro", "localidade": "Azinhoso", "morada": "Rua do Passo, 63", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "916 154 923; 936 271 840", "telefone": "916 154 923", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Lagar do Nicolau, Rua do Passo, 63, Azinhoso, Mogadouro, Portugal"}, {"id": 12, "nome": "Rei D’orelhão", "provincia": "Trás-os-Montes", "zona": "Mirandela", "localidade": "Lamas de Orelhão", "morada": "Largo da Igreja, 1", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "278 979 074", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Rei D’orelhão, Largo da Igreja, 1, Lamas de Orelhão, Mirandela, Portugal"}, {"id": 13, "nome": "Vera e Pedro", "provincia": "Trás-os-Montes", "zona": "Mirandela", "localidade": "Franco", "morada": "Travessa da Feira, 3", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "278 969 056", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Vera e Pedro, Travessa da Feira, 3, Franco, Mirandela, Portugal"}, {"id": 14, "nome": "Adega Faustino", "provincia": "Trás-os-Montes", "zona": "Chaves", "localidade": "Travessa Cândido dos Reis", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "276 322 142", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Faustino, Travessa Cândido dos Reis, Chaves, Portugal"}, {"id": 15, "nome": "Taska das Caldas", "provincia": "Trás-os-Montes", "zona": "Chaves", "localidade": "Rua Joaquim José Delgado, 16 e 17", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "918 937 088", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taska das Caldas, Rua Joaquim José Delgado, 16 e 17, Chaves, Portugal"}, {"id": 16, "nome": "Casa Ventura", "provincia": "Tâmega, Sousa e Basto", "zona": "Amarante", "localidade": "Castanheiro Redondo, Telões", "morada": "Rua do Castanheiro Redondo, 1248", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 482 211", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Ventura, Rua do Castanheiro Redondo, 1248, Castanheiro Redondo, Telões, Amarante, Portugal"}, {"id": 17, "nome": "Tasca do João", "provincia": "Tâmega, Sousa e Basto", "zona": "Amarante", "localidade": "Padronelo", "morada": "Rua de Santo André, 1185", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 424 703", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca do João, Rua de Santo André, 1185, Padronelo, Amarante, Portugal"}, {"id": 18, "nome": "Casa Silva", "provincia": "Tâmega, Sousa e Basto", "zona": "Amarante", "localidade": "Gondar", "morada": "Rua de Larim, 177", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 441 484", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Silva, Rua de Larim, 177, Gondar, Amarante, Portugal"}, {"id": 19, "nome": "Adega Regional Cavalinho", "provincia": "Tâmega, Sousa e Basto", "zona": "Amarante", "localidade": "Gondar", "morada": "Rua do Cavalinho, 24", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 441 670", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Regional Cavalinho, Rua do Cavalinho, 24, Gondar, Amarante, Portugal"}, {"id": 20, "nome": "Tasquinha da Ponte", "provincia": "Tâmega, Sousa e Basto", "zona": "Amarante", "localidade": "Rua 31 de janeiro, 193", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 433 715", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasquinha da Ponte, Rua 31 de janeiro, 193, Amarante, Portugal"}, {"id": 21, "nome": "Adega Regional Amarantinho", "provincia": "Tâmega, Sousa e Basto", "zona": "Amarante", "localidade": "Rua do Tâmega, 864", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "255 424 188; 961 357 268", "telefone": "255 424 188", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Regional Amarantinho, Rua do Tâmega, 864, Amarante, Portugal"}, {"id": 22, "nome": "Tasquinha da Alice", "provincia": "Tâmega, Sousa e Basto", "zona": "Terras de Basto", "localidade": "Bobal, Bilhó", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "255 381 381; 965 812 304", "telefone": "255 381 381", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasquinha da Alice, Bobal, Bilhó, Mondim de Basto, Portugal"}, {"id": 23, "nome": "Adega Regional Sete Condes", "provincia": "Tâmega, Sousa e Basto", "zona": "Terras de Basto", "localidade": "Rua Velha/Travessa do Escourido, 13", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 382 342", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Regional Sete Condes, Rua Velha/Travessa do Escourido, 13, Mondim de Basto, Portugal"}, {"id": 24, "nome": "Luís do Outeirinho", "provincia": "Tâmega, Sousa e Basto", "zona": "Terras de Basto", "localidade": "Refojos de Basto", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "253 662 823", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Luís do Outeirinho, Refojos de Basto, Cabeceiras de Basto, Portugal"}, {"id": 25, "nome": "Tasca do Valado", "provincia": "Tâmega, Sousa e Basto", "zona": "Baião", "localidade": "Mafómedes, Teixeira", "morada": "Rua Caminho de Mafómedes", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "914 304 494", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca do Valado, Rua Caminho de Mafómedes, Mafómedes, Teixeira, Baião, Portugal"}, {"id": 26, "nome": "Pensão Borges", "provincia": "Tâmega, Sousa e Basto", "zona": "Baião", "localidade": "Rua de Camões, 306", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 541 322", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Pensão Borges, Rua de Camões, 306, Baião, Portugal"}, {"id": 27, "nome": "Taberna do Carvalhal", "provincia": "Tâmega, Sousa e Basto", "zona": "E Ainda", "localidade": "Várzea da Ovelha e Aliviada", "morada": "Rua de Ruival, 172", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "914 971 196", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna do Carvalhal, Rua de Ruival, 172, Várzea da Ovelha e Aliviada, Marco de Canaveses, Portugal"}, {"id": 28, "nome": "O Buraco", "provincia": "Grande Porto", "zona": "Porto Cidade", "localidade": "Rua do Bolhão, 95", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "222 006 717", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Buraco, Rua do Bolhão, 95, Porto, Portugal"}, {"id": 29, "nome": "O Caseirinho", "provincia": "Grande Porto", "zona": "Porto Cidade", "localidade": "Massarelos", "morada": "Cais das Pedras, 40", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "915 876 772", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Caseirinho, Cais das Pedras, 40, Massarelos, Porto, Portugal"}, {"id": 30, "nome": "Casa Zé das Letras", "provincia": "Grande Porto", "zona": "Litoral", "localidade": "Rua Guedes de Amorim, 126", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "252 683 937", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Zé das Letras, Rua Guedes de Amorim, 126, Póvoa de Varzim, Portugal"}, {"id": 31, "nome": "Olhinhos do Polvo", "provincia": "Grande Porto", "zona": "Litoral", "localidade": "Rua Conde Salvador", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "916 006 021", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Olhinhos do Polvo, Rua Conde Salvador, Matosinhos, Portugal"}, {"id": 32, "nome": "O Espigueiro", "provincia": "Grande Porto", "zona": "Litoral", "localidade": "Rua Heróis de França, 721", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "229 385 685", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Espigueiro, Rua Heróis de França, 721, Matosinhos, Portugal"}, {"id": 33, "nome": "A Fidalguinha", "provincia": "Grande Porto", "zona": "Litoral", "localidade": "Avenida São João de Deus, 1484", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "227 312 036; 917 739 386", "telefone": "227 312 036", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Fidalguinha, Avenida São João de Deus, 1484, Espinho, Portugal"}, {"id": 34, "nome": "D. Pernil Taberna", "provincia": "Grande Porto", "zona": "Interior", "localidade": "Milheirós", "morada": "Rua de Salgueiros, 1016", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "914 325 300", "website": null, "actualizado": "2026-09-13", "mapsQuery": "D. Pernil Taberna, Rua de Salgueiros, 1016, Milheirós, Maia, Portugal"}, {"id": 35, "nome": "A Regional Valonguense", "provincia": "Grande Porto", "zona": "Interior", "localidade": "Rua D. Pedro IV, 150", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "224 223 299", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Regional Valonguense, Rua D. Pedro IV, 150, Valongo, Portugal"}, {"id": 36, "nome": "Casa Sapo", "provincia": "Grande Porto", "zona": "Interior", "localidade": "Irivo", "morada": "Rua da Estrada, 2", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 752 326", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Sapo, Rua da Estrada, 2, Irivo, Penafiel, Portugal"}, {"id": 37, "nome": "Casa Pitarisca", "provincia": "Grande Porto", "zona": "Interior", "localidade": "Torno, Senhora da Aparecida", "morada": "Avenida da Igreja, 25", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "255 821 222", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Pitarisca, Avenida da Igreja, 25, Torno, Senhora da Aparecida, Lousada, Portugal"}, {"id": 38, "nome": "Restaurante Zé Nabeiro", "provincia": "Beira", "zona": "Beira Alta", "localidade": "Soito", "morada": "Rua das Hortas, 9", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "271 605 116", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Restaurante Zé Nabeiro, Rua das Hortas, 9, Soito, Sabugal, Portugal"}, {"id": 39, "nome": "Cidália", "provincia": "Beira", "zona": "Beira Alta", "localidade": "Barracão", "morada": "Estrada Nacional 233", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "271 231 562", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Cidália, Estrada Nacional 233, Barracão, Guarda, Portugal"}, {"id": 40, "nome": "Restaurante Típico do Mezio", "provincia": "Beira", "zona": "Beira Alta", "localidade": "Eido, Mezio", "morada": "Largo Dolores de Jesus", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "254 689 265", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Restaurante Típico do Mezio, Largo Dolores de Jesus, Eido, Mezio, Montemuro, Portugal"}, {"id": 41, "nome": "Salva Almas", "provincia": "Beira", "zona": "Beira Alta", "localidade": "Macieira do Sul", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "232 731 272; 938 362 871", "telefone": "232 731 272", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Salva Almas, Macieira do Sul, São Pedro do Sul, Portugal"}, {"id": 42, "nome": "Cova Funda", "provincia": "Beira", "zona": "Beira Alta", "localidade": "Rua Nossa Senhora da Assunção, 2", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "232 881 621", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Cova Funda, Rua Nossa Senhora da Assunção, 2, Santa Comba Dão, Portugal"}, {"id": 43, "nome": "Retiro da Manhosa", "provincia": "Beira", "zona": "Beira Alta", "localidade": "Rua da Lage", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "232 461 573", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Retiro da Manhosa, Rua da Lage, Viseu, Portugal"}, {"id": 44, "nome": "Retiro da Cerca", "provincia": "Beira", "zona": "Beira Litoral", "localidade": "Cidacos", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "256 688 343", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Retiro da Cerca, Cidacos, Oliveira de Azeméis, Portugal"}, {"id": 45, "nome": "Zé Manel dos Ossos", "provincia": "Beira", "zona": "Beira Litoral", "localidade": "Beco do Forno, 12", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "239 823 790", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Zé Manel dos Ossos, Beco do Forno, 12, Coimbra, Portugal"}, {"id": 46, "nome": "D. Lúcia", "provincia": "Beira", "zona": "Beira Litoral", "localidade": "Rua das Azeiteiras, 36", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "919 253 070", "website": null, "actualizado": "2026-09-13", "mapsQuery": "D. Lúcia, Rua das Azeiteiras, 36, Coimbra, Portugal"}, {"id": 47, "nome": "O Bigodes", "provincia": "Oeste e Ribatejo", "zona": "Oeste", "localidade": "N1/IC2, km 81, Moita do Gavião", "morada": "N1/IC2, km 81, Moita do Gavião, Benedita", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "262 928 357; 924 140 022", "telefone": "262 928 357", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Bigodes, N1/IC2, km 81, Moita do Gavião, Benedita, N1/IC2, km 81, Moita do Gavião, Alcobaça, Portugal"}, {"id": 48, "nome": "O Maneta", "provincia": "Oeste e Ribatejo", "zona": "Oeste", "localidade": "Cortes", "morada": "Largo Afonso Lopes Vieira, 51", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "244 891 238", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Maneta, Largo Afonso Lopes Vieira, 51, Cortes, Leiria, Portugal"}, {"id": 49, "nome": "Copo 3", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Rua 16 de novembro, Mercado Municipal, loja 3", "morada": "Rua 16 de novembro, Mercado Municipal, loja 3", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "243 703 496", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Copo 3, Rua 16 de novembro, Mercado Municipal, loja 3, Cartaxo, Portugal"}, {"id": 50, "nome": "Central do Ribatejo", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Rua Direita 239, Benfica do Ribatejo", "morada": "Rua Direita 239, Benfica do Ribatejo", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "243 589 228", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Central do Ribatejo, Rua Direita 239, Benfica do Ribatejo, Portugal"}, {"id": 51, "nome": "Silas", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Rua 5 de Outubro", "morada": "Muge", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "243 581 366", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Silas, Muge, Rua 5 de Outubro, N118, Portugal"}, {"id": 52, "nome": "Taberna do Quinzena 1", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Rua Pedro de Santarém, 93/95", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "249 322 804", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna do Quinzena 1, Rua Pedro de Santarém, 93/95, Santarém, Portugal"}, {"id": 53, "nome": "O Chicote", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Arneiro dos Borralhos; Achete", "morada": "Rua Cidade de Santarém", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "243 468 300", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Chicote, Rua Cidade de Santarém, Arneiro dos Borralhos; Achete, Santarém, Portugal"}, {"id": 54, "nome": "Adega Regional da Calhandriz", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Largo das Forças Armadas, 8, Calhandriz", "morada": "Largo das Forças Armadas, 8, Calhandriz", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "219 580 812", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Regional da Calhandriz, Largo das Forças Armadas, 8, Calhandriz, Vila Franca de Xira, Portugal"}, {"id": 55, "nome": "Ninho de Hamburgo", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Calhandriz", "morada": "Rua António Lopes de Avelar, 9 e 10", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "219 681 821", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Ninho de Hamburgo, Rua António Lopes de Avelar, 9 e 10, Calhandriz, Vila Franca de Xira, Portugal"}, {"id": 56, "nome": "O Casal Minhoto", "provincia": "Oeste e Ribatejo", "zona": "Ribatejo", "localidade": "Póvoa de Santa Iria", "morada": "Rua Santo António de Bolonha, 46, torre n.o 2, loja 1", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "219 565 138", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Casal Minhoto, Rua Santo António de Bolonha, 46, torre n.o 2, loja 1, Póvoa de Santa Iria, Vila Franca de Xira, Portugal"}, {"id": 57, "nome": "A Penalva da Graça", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua da Graça, 26", "morada": "Rua da Graça, 26", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "218 872 755", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Penalva da Graça, Rua da Graça, 26, Portugal"}, {"id": 58, "nome": "Tasca do Jaime", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua da Graça, 91", "morada": "Rua da Graça, 91", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "218 881 560", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca do Jaime, Rua da Graça, 91, Portugal"}, {"id": 59, "nome": "A Merendinha do Arco Bandeira", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua dos Sapateiros, 230", "morada": "Rua dos Sapateiros, 230", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "213 425 135", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Merendinha do Arco Bandeira, Rua dos Sapateiros, 230, Portugal"}, {"id": 60, "nome": "Adega Zé dos Cornos", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Beco dos Surradores, 5", "morada": "Beco dos Surradores, 5", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "218 869 641", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Zé dos Cornos, Beco dos Surradores, 5, Portugal"}, {"id": 61, "nome": "Rui do Barrote", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua Castelo Branco Saraiva, 95 A", "morada": "Rua Castelo Branco Saraiva, 95 A", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "218 689 300", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Rui do Barrote, Rua Castelo Branco Saraiva, 95 A, Portugal"}, {"id": 62, "nome": "A Imperial de Campo de Ourique", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua Correia Teles, 67", "morada": "Rua Correia Teles, 67", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "213 886 096", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Imperial de Campo de Ourique, Rua Correia Teles, 67, Portugal"}, {"id": 63, "nome": "Tasquinha do Lagarto", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua de Campolide, 258", "morada": "Rua de Campolide, 258", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "213 883 202", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasquinha do Lagarto, Rua de Campolide, 258, Portugal"}, {"id": 64, "nome": "Maçã Verde", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua dos Caminhos de Ferro, 1100", "morada": "Rua dos Caminhos de Ferro, 1100", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "965 512 266", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Maçã Verde, Rua dos Caminhos de Ferro, 1100, Portugal"}, {"id": 65, "nome": "A Galé dos Manos", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Estrada do Calhariz de Benfica, 182", "morada": "Estrada do Calhariz de Benfica, 182", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "217 742 817", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Galé dos Manos, Estrada do Calhariz de Benfica, 182, Portugal"}, {"id": 66, "nome": "Casa Zé Pinto", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Largo General Sousa Brandão, 2, Benfica", "morada": "Largo General Sousa Brandão, 2, Benfica", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "217 787 783", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Zé Pinto, Largo General Sousa Brandão, 2, Benfica, Portugal"}, {"id": 67, "nome": "Tasca do João", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua do Lumiar, 122", "morada": "Rua do Lumiar, 122", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "217 590 311", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca do João, Rua do Lumiar, 122, Portugal"}, {"id": 68, "nome": "Tasca do Zé Russo", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua do Vale Formoso de Cima, 264", "morada": "Rua do Vale Formoso de Cima, 264", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "218 376 002; 918 742 321", "telefone": "218 376 002", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca do Zé Russo, Rua do Vale Formoso de Cima, 264, Portugal"}, {"id": 69, "nome": "Floresta de Moscavide", "provincia": "Grande Lisboa", "zona": "Lisboa Cidade", "localidade": "Rua Almirante Gago Coutinho, 1 2 A e B", "morada": "Rua Almirante Gago Coutinho, 1 2 A e B", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "219 442 721", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Floresta de Moscavide, Rua Almirante Gago Coutinho, 1 2 A e B, Portugal"}, {"id": 70, "nome": "Taberna Oporto", "provincia": "Grande Lisboa", "zona": "Cascais, Oeiras e Sintra", "localidade": "Carcavelos", "morada": "Rua Cândido dos Reis, 2", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "912 823 007", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna Oporto, Rua Cândido dos Reis, 2, Carcavelos, Cascais, Portugal"}, {"id": 71, "nome": "O Queque", "provincia": "Grande Lisboa", "zona": "Cascais, Oeiras e Sintra", "localidade": "Paço de Arcos", "morada": "R. Instituto Conde de Agrolongo, 3", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "214 429 821", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Queque, R. Instituto Conde de Agrolongo, 3, Paço de Arcos, Oeiras, Portugal"}, {"id": 72, "nome": "O Trindade", "provincia": "Grande Lisboa", "zona": "Cascais, Oeiras e Sintra", "localidade": "Queijas", "morada": "Largo 1.o de Dezembro", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "214 185 485; 966 896 075", "telefone": "214 185 485", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Trindade, Largo 1.o de Dezembro, Queijas, Oeiras, Portugal"}, {"id": 73, "nome": "O Alentejano", "provincia": "Grande Lisboa", "zona": "Cascais, Oeiras e Sintra", "localidade": "Serradas, Rio de Mouro", "morada": "Rua Álvaro Augusto Rodrigues Vilela, 148", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "219 177 153", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Alentejano, Rua Álvaro Augusto Rodrigues Vilela, 148, Serradas, Rio de Mouro, Sintra, Portugal"}, {"id": 74, "nome": "O Gafanhoto", "provincia": "Grande Lisboa", "zona": "Noroeste", "localidade": "Ericeira", "morada": "Rua da Conceição, 8", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "261 864 514; 962 993 780", "telefone": "261 864 514", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Gafanhoto, Rua da Conceição, 8, Ericeira, Mafra, Portugal"}, {"id": 75, "nome": "Feliciano", "provincia": "Grande Lisboa", "zona": "Norte", "localidade": "São João da Talha", "morada": "Rua dos Combatentes da Grande Guerra, 365 – Bairro, da Fraternidade", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "968 131 313", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Feliciano, Rua dos Combatentes da Grande Guerra, 365 – Bairro, da Fraternidade, São João da Talha, Loures, Portugal"}, {"id": 76, "nome": "Taberna do Zé da Lídia", "provincia": "Grande Lisboa", "zona": "Sul do Tejo e Sado", "localidade": "Trafaria", "morada": "Rua Jaime Artur Costa Pinto, 12", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "212 913 000", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna do Zé da Lídia, Rua Jaime Artur Costa Pinto, 12, Trafaria, Almada, Portugal"}, {"id": 77, "nome": "Casa Ideal", "provincia": "Grande Lisboa", "zona": "Sul do Tejo e Sado", "localidade": "Trafaria", "morada": "Rua Tenente Maia, 22", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "212 950 898", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa Ideal, Rua Tenente Maia, 22, Trafaria, Almada, Portugal"}, {"id": 78, "nome": "Pérola da Mourisca", "provincia": "Grande Lisboa", "zona": "Sul do Tejo e Sado", "localidade": "Mourisca do Sado", "morada": "Rua da Baía do Sado, 9", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "265 793 689", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Pérola da Mourisca, Rua da Baía do Sado, 9, Mourisca do Sado, Setúbal, Portugal"}, {"id": 79, "nome": "O Túlio", "provincia": "Alentejo", "zona": "Alto Alentejo", "localidade": "Rua Francisco Diogo Pinto, 1", "morada": "Rua Francisco Diogo Pinto, 1, Monte do Arneiro, Santana", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "245 469 129", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Túlio, Rua Francisco Diogo Pinto, 1, Monte do Arneiro, Santana, Rua Francisco Diogo Pinto, 1, Nisa, Portugal"}, {"id": 80, "nome": "Tasca da Calçadinha", "provincia": "Alentejo", "zona": "Alto Alentejo", "localidade": "Estrada Nacional 243", "morada": "Estrada Nacional 243, Monforte", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "245 573 336", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca da Calçadinha, Estrada Nacional 243, Monforte, Estrada Nacional 243, Portugal"}, {"id": 81, "nome": "Adega dos Potes", "provincia": "Alentejo", "zona": "Alentejo Central", "localidade": "Arcos", "morada": "Rua Dr. Teles de Matos, 36-38", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "266 840 145", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega dos Potes, Rua Dr. Teles de Matos, 36-38, Arcos, Estremoz, Portugal"}, {"id": 82, "nome": "Espalha Brasas", "provincia": "Alentejo", "zona": "Alentejo Central", "localidade": "Monte das Naves de Cima, Alcaraviça", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "963 555 191", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Espalha Brasas, Monte das Naves de Cima, Alcaraviça, Borba, Portugal"}, {"id": 83, "nome": "O Ciborro", "provincia": "Alentejo", "zona": "Alentejo Central", "localidade": "Avenida Nacional, 10", "morada": "Avenida Nacional, 10, Ciborro", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "266 847 131", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Ciborro, Avenida Nacional, 10, Ciborro, Avenida Nacional, 10, Montemor-o-Novo, Portugal"}, {"id": 84, "nome": "O Cortiço", "provincia": "Alentejo", "zona": "Alentejo Central", "localidade": "Fazendas do Cortiço", "morada": "Estrada Nacional 2", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "962 771 945", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Cortiço, Estrada Nacional 2, Fazendas do Cortiço, Montemor-o-Novo, Portugal"}, {"id": 85, "nome": "A Ribeira", "provincia": "Alentejo", "zona": "Alentejo Central", "localidade": "Rua de São Domingos", "morada": "Rua de São Domingos", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "266 890 211", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Ribeira, Rua de São Domingos, Montemor-o-Novo, Portugal"}, {"id": 86, "nome": "Adega Velha", "provincia": "Alentejo", "zona": "Alentejo Central", "localidade": "Rua Joaquim José Vasconcelos Gusmão, 9", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "266 586 443", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Adega Velha, Rua Joaquim José Vasconcelos Gusmão, 9, Mourão, Portugal"}, {"id": 87, "nome": "Essa Taberna", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Rua da Amoreira, 5", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "965 048 932", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Essa Taberna, Rua da Amoreira, 5, Cuba, Portugal"}, {"id": 88, "nome": "Taberna do João das Cabeças", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Rua da Aclamação, 60", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "286 322 317", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna do João das Cabeças, Rua da Aclamação, 60, Castro Verde, Portugal"}, {"id": 89, "nome": "Toy Faróis", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Porto Peles, Neves", "morada": "Rua Venâncio Rosa Gabriel, 6", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "284 361 130; 968 749 677", "telefone": "284 361 130", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Toy Faróis, Rua Venâncio Rosa Gabriel, 6, Porto Peles, Neves, Beja, Portugal"}, {"id": 90, "nome": "Taberna do Cesário", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Porto Peles, Neves", "morada": "Rua Venâncio Rosa Gabriel, 5", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "284 331 383; 969 103 680", "telefone": "284 331 383", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna do Cesário, Rua Venâncio Rosa Gabriel, 5, Porto Peles, Neves, Beja, Portugal"}, {"id": 91, "nome": "Taberna do Liberato", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Segunda Rua de Mouraria, 3", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "927 250 132", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Taberna do Liberato, Segunda Rua de Mouraria, 3, Moura, Portugal"}, {"id": 92, "nome": "O Engrola", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Rua dos Baloucos, 1", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "284 544 026; 968 228 132", "telefone": "284 544 026", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Engrola, Rua dos Baloucos, 1, Serpa, Portugal"}, {"id": 93, "nome": "A Paragem", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Corvos", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "286 616 140", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Paragem, Corvos, Mértola, Portugal"}, {"id": 94, "nome": "O Pescador do Guadiana", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Penha da Águia, Espírito Santo", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "286 675 417; 967 747 320", "telefone": "286 675 417", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Pescador do Guadiana, Penha da Águia, Espírito Santo, Mértola, Portugal"}, {"id": 95, "nome": "Passarinho", "provincia": "Alentejo", "zona": "Baixo Alentejo", "localidade": "Cercal do Alentejo", "morada": "Rua João Sousa Farelo, 21", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": "269 904 661; 963 888 904", "telefone": "269 904 661", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Passarinho, Rua João Sousa Farelo, 21, Cercal do Alentejo, Santiago do Cacém, Portugal"}, {"id": 96, "nome": "O Maximino", "provincia": "Algarve", "zona": "Monchique", "localidade": "Pocilgais, Caldas de Monchique", "morada": "Estrada de Monchique", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "282 911 427", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Maximino, Estrada de Monchique, Pocilgais, Caldas de Monchique, Monchique, Portugal"}, {"id": 97, "nome": "Tasca do Petrol", "provincia": "Algarve", "zona": "Monchique", "localidade": "Corgo do Vale, Marmelete", "morada": null, "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "282 955 117", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Tasca do Petrol, Corgo do Vale, Marmelete, Monchique, Portugal"}, {"id": 98, "nome": "Casa dos Presuntos", "provincia": "Algarve", "zona": "Loulé", "localidade": "Cortelha", "morada": "Estrada Nacional 2", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "289 846 184", "website": null, "actualizado": "2026-09-13", "mapsQuery": "Casa dos Presuntos, Estrada Nacional 2, Cortelha, Loulé, Portugal"}, {"id": 99, "nome": "O Primo dos Caracóis", "provincia": "Algarve", "zona": "Olhão", "localidade": "Quatrim do Norte", "morada": "Estada de Quatrim do Norte", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "289 702 662", "website": null, "actualizado": "2026-09-13", "mapsQuery": "O Primo dos Caracóis, Estada de Quatrim do Norte, Quatrim do Norte, Olhão, Portugal"}, {"id": 100, "nome": "A Taberna do Ramos", "provincia": "Algarve", "zona": "Alcoutim", "localidade": "Estrada Nacional 122, cruzamento das Quatro Estradas", "morada": "Estrada Nacional 122, cruzamento das Quatro Estradas, Balurcos de Baixo", "tipo": "tasco", "especialidade": null, "estado": "aberto", "fonte": "livro «As 100 Melhores Tascas de Portugal» (António Catarino e Rui Cardoso)", "notas": null, "telefone": "281 547 139", "website": null, "actualizado": "2026-09-13", "mapsQuery": "A Taberna do Ramos, Estrada Nacional 122, cruzamento das Quatro Estradas, Balurcos de Baixo, Estrada Nacional 122, cruzamento das Quatro Estradas, Alcoutim, Portugal"}]</script>
+<script id="picks-data" type="application/json">[{"region": "Minho", "items": [{"want": "Vila Nova de Famalicão", "label": "Casa Pêga", "ids": [1]}, {"want": "Famalicão", "label": "Casa de Pasto de Pouve/a Quintinha", "ids": [2]}, {"want": "Guimarães", "label": "Florêncio", "ids": [5]}, {"want": "Viana do Castelo", "label": "Casa Primavera Taberna Soares", "ids": [6]}]}, {"region": "Trás-os-Montes", "items": [{"want": "Vila Nova de Foz Côa", "label": "Taberna da Julinha", "ids": [9]}, {"want": "Carrazeda de Ansiães", "label": "Calça Curta", "ids": [10]}, {"want": "Mogadouro", "label": "O Lagar do Nicolau", "ids": [11]}, {"want": "Mirandela", "label": "Rei D’orelhão", "ids": [12]}]}, {"region": "Tâmega, Sousa e Basto", "items": [{"want": "Amarante", "label": "Casa Ventura", "ids": [16]}, {"want": "Terras de Basto", "label": "Tasquinha da Alice", "ids": [22]}, {"want": "Baião", "label": "Tasca do Valado", "ids": [25]}, {"want": "E Ainda", "label": "Taberna do Carvalhal", "ids": [27]}]}, {"region": "Grande Porto", "items": [{"want": "Porto Cidade", "label": "O Buraco", "ids": [28]}, {"want": "Litoral", "label": "Casa Zé das Letras", "ids": [30]}, {"want": "Interior", "label": "D. Pernil Taberna", "ids": [34]}]}, {"region": "Beira", "items": [{"want": "Beira Alta", "label": "Restaurante Zé Nabeiro", "ids": [38]}, {"want": "Beira Litoral", "label": "Retiro da Cerca", "ids": [44]}]}, {"region": "Oeste e Ribatejo", "items": [{"want": "Oeste", "label": "O Bigodes", "ids": [47]}, {"want": "Ribatejo", "label": "Copo 3", "ids": [49]}]}, {"region": "Grande Lisboa", "items": [{"want": "Lisboa Cidade", "label": "A Penalva da Graça", "ids": [57]}, {"want": "Cascais, Oeiras e Sintra", "label": "Taberna Oporto", "ids": [70]}, {"want": "Noroeste", "label": "O Gafanhoto", "ids": [74]}, {"want": "Norte", "label": "Feliciano", "ids": [75]}]}, {"region": "Alentejo", "items": [{"want": "Alto Alentejo", "label": "O Túlio", "ids": [79]}, {"want": "Alentejo Central", "label": "Adega dos Potes", "ids": [81]}, {"want": "Baixo Alentejo", "label": "Essa Taberna", "ids": [87]}]}, {"region": "Algarve", "items": [{"want": "Monchique", "label": "O Maximino", "ids": [96]}, {"want": "Loulé", "label": "Casa dos Presuntos", "ids": [98]}, {"want": "Olhão", "label": "O Primo dos Caracóis", "ids": [99]}, {"want": "Alcoutim", "label": "A Taberna do Ramos", "ids": [100]}]}]</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var restaurants = JSON.parse(document.getElementById("restaurants-data").textContent);
+  var pickGroups = JSON.parse(document.getElementById("picks-data").textContent);
+  var byId = new Map(restaurants.map(function (r) { return [r.id, r]; }));
+
+  var REGION_GROUPS = [
+    { title: "Norte", provincias: ["Minho", "Douro Litoral", "Douro", "Trás-os-Montes"] },
+    { title: "Beiras", provincias: ["Beira Litoral", "Beira Alta", "Beira Baixa"] },
+    { title: "Oeste e Tejo", provincias: ["Estremadura", "Ribatejo", "Grande Lisboa", "Setúbal"] },
+    { title: "Sul", provincias: ["Alentejo", "Algarve"] },
+    { title: "Ilhas", provincias: ["Madeira", "Açores"] },
+    { title: "Espanha", provincias: ["Espanha"] }
+  ];
+
+  var TIPO_ORDER = ["tasco","taberna","clássico","cervejaria","churrasqueira","marisqueira","petiscos","pastelaria","date / contemporâneo","fine dining","hotel-restaurante","incerto"];
+  var TIPO_LABEL = {
+    tasco: "Tasco", taberna: "Taberna", "clássico": "Clássico", cervejaria: "Cervejaria",
+    churrasqueira: "Churrasqueira", marisqueira: "Marisqueira", petiscos: "Petiscos",
+    pastelaria: "Pastelaria", "date / contemporâneo": "Contemporâneo", "fine dining": "Fine dining",
+    "hotel-restaurante": "Hotel", incerto: "Por classificar"
+  };
+
+  function fold(value) {
+    return (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function countByProvincia() {
+    var counts = new Map();
+    restaurants.forEach(function (r) {
+      if (r.estado === "encerrado") return;
+      counts.set(r.provincia, (counts.get(r.provincia) || 0) + 1);
+    });
+    return counts;
+  }
+  var PROV_COUNTS = countByProvincia();
+
+  function zonasFor(provincia) {
+    var seen = new Set(), out = [];
+    restaurants.forEach(function (r) {
+      if (r.provincia !== provincia || r.estado === "encerrado") return;
+      if (!r.zona || seen.has(r.zona)) return;
+      seen.add(r.zona); out.push(r.zona);
+    });
+    out.sort(function (a, b) { return a.localeCompare(b, "pt"); });
+    return out;
+  }
+
+  function tiposPresent(list) {
+    var counts = new Map();
+    list.forEach(function (r) { if (r.tipo) counts.set(r.tipo, (counts.get(r.tipo) || 0) + 1); });
+    var known = TIPO_ORDER.filter(function (t) { return counts.has(t); });
+    var extra = Array.from(counts.keys()).filter(function (t) { return TIPO_ORDER.indexOf(t) === -1; });
+    return known.concat(extra);
+  }
+
+  function filterRestaurants(q) {
+    var needle = fold(q.search);
+    var idSet = q.ids ? new Set(q.ids) : null;
+    var out = [];
+    restaurants.forEach(function (r) {
+      if (r.estado === "encerrado") return;
+      if (!q.includeUncertain && r.estado === "incerto") return;
+      if (idSet && !idSet.has(r.id)) return;
+      if (q.provincia && r.provincia !== q.provincia) return;
+      if (q.zona && r.zona !== q.zona) return;
+      if (q.tipo && r.tipo !== q.tipo) return;
+      if (needle) {
+        var hay = fold([r.nome, r.localidade, r.zona, r.provincia, r.morada, r.tipo, r.especialidade, r.notas].filter(Boolean).join(" "));
+        if (hay.indexOf(needle) === -1) return;
+      }
+      out.push(r);
+    });
+    return out;
+  }
+
+  function mapsLinks(r) {
+    var q = encodeURIComponent(r.mapsQuery);
+    return {
+      google: "https://www.google.com/maps/search/?api=1&query=" + q,
+      apple: "https://maps.apple.com/?q=" + q,
+      waze: "https://waze.com/ul?q=" + q + "&navigate=yes"
+    };
+  }
+  function telHref(phone) {
+    var digits = phone.replace(/[^\d+]/g, "");
+    if (digits.indexOf("+") === 0) return "tel:" + digits;
+    if (digits.indexOf("00") === 0) return "tel:+" + digits.slice(2);
+    return "tel:+351" + digits;
+  }
+  function websiteHref(url) {
+    return /^https?:\/\//i.test(url) ? url : "https://" + url;
+  }
+  function placeLine(r) {
+    var loc = r.localidade, zona = r.zona, prov = r.provincia, parts = [];
+    if (loc) parts.push(loc);
+    if (zona && (!loc || fold(loc).indexOf(fold(zona)) === -1)) parts.push(zona);
+    if (prov && (!loc || fold(loc).indexOf(fold(prov)) === -1) && (!zona || fold(zona) !== fold(prov))) parts.push(prov);
+    return parts.join(" · ");
+  }
+  function openCount() { return restaurants.filter(function (r) { return r.estado !== "encerrado"; }).length; }
+  function pickRandom(list) {
+    var pool = list.filter(function (r) { return r.estado === "aberto"; });
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // ---- Favorites (localStorage) ----
+  var FAV_KEY = "guia-porta-10a-favoritos-v1";
+  function loadFavs() {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); } catch (e) { return []; }
+  }
+  function saveFavs(ids) {
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(ids)); } catch (e) {}
+  }
+  var favIds = loadFavs();
+  function isFav(id) { return favIds.indexOf(id) !== -1; }
+  function toggleFav(id) {
+    var i = favIds.indexOf(id);
+    if (i === -1) favIds.unshift(id); else favIds.splice(i, 1);
+    saveFavs(favIds);
+  }
+
+  // ---- "Onde estás?" (texto livre, sem geolocalização) ----
+  var LOC_KEY = "guia-porta-10a-local-v1";
+  function loadLoc() {
+    try { return localStorage.getItem(LOC_KEY) || ""; } catch (e) { return ""; }
+  }
+  function saveLoc(text) {
+    try { localStorage.setItem(LOC_KEY, text); } catch (e) {}
+  }
+  var LOC_STOPWORDS = new Set(["estou","fico","moro","ando","aqui","perto","longe","zona","regiao","agora","mesmo","cerca","proximo","proxima","sitio","lado","lados","hoje"].concat(["de","da","do","das","dos","em","na","no","nas","nos","e","a","o","as","os","um","uma"]));
+  function locationWords(text) {
+    return fold(text).split(" ").filter(function (w) { return w.length >= 3 && !LOC_STOPWORDS.has(w); });
+  }
+  function matchesLocation(r, words) {
+    if (!words.length) return false;
+    var hay = fold([r.localidade, r.zona, r.provincia, r.morada].filter(Boolean).join(" "));
+    return words.some(function (w) { return hay.indexOf(w) !== -1; });
+  }
+  function locationPool() {
+    var words = locationWords(state.myLocation);
+    if (!words.length) return null;
+    var base = state.tab === "guardados"
+      ? favIds.map(function (id) { return byId.get(id); }).filter(Boolean)
+      : restaurants.filter(function (r) { return r.estado === "aberto"; });
+    var matched = base.filter(function (r) { return matchesLocation(r, words); });
+    return matched.length ? matched : null;
+  }
+
+  // ---- Icons (inline SVG) ----
+  var ICON = {
+    search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    x: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    shuffle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+    chevron: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
+    phone: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    globe: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    pin: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+  };
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---- State ----
+  var state = {
+    tab: "lista",
+    search: "",
+    provincia: null,
+    zona: null,
+    tipo: null,
+    focus: null, // { ids, label }
+    selectedId: null,
+    myLocation: loadLoc()
+  };
+
+  var app = document.getElementById("app");
+
+  function currentFiltered() {
+    return filterRestaurants({
+      search: state.search,
+      provincia: state.focus ? null : state.provincia,
+      zona: state.focus ? null : state.zona,
+      tipo: state.focus ? null : state.tipo,
+      ids: state.focus ? state.focus.ids : null,
+      includeUncertain: true
+    });
+  }
+
+  function showingList() {
+    return state.tab === "guardados" || Boolean(state.search.trim()) || Boolean(state.focus) || Boolean(state.provincia) || Boolean(state.tipo);
+  }
+
+  function clearFilters() {
+    state.search = ""; state.provincia = null; state.zona = null; state.tipo = null; state.focus = null;
+    render();
+  }
+
+  function selectProvincia(next) {
+    state.focus = null; state.provincia = next; state.zona = null; state.tab = "lista";
+    render();
+  }
+
+  function onQuickPick(item) {
+    var found = item.ids.map(function (id) { return byId.get(id); }).filter(Boolean);
+    if (found.length === 1) { openDrawer(found[0].id); return; }
+    state.search = ""; state.provincia = null; state.zona = null; state.tipo = null;
+    state.focus = { ids: item.ids, label: item.want };
+    state.tab = "lista";
+    render();
+  }
+
+  function decide() {
+    var locPool = locationPool();
+    var pick = locPool ? pickRandom(locPool) : null;
+
+    if (!pick) {
+      var fromView;
+      if (state.tab === "guardados") {
+        fromView = favIds.map(function (id) { return byId.get(id); }).filter(Boolean);
+      } else {
+        fromView = filterRestaurants({
+          search: state.search, provincia: state.focus ? null : state.provincia,
+          zona: state.focus ? null : state.zona, tipo: state.focus ? null : state.tipo,
+          ids: state.focus ? state.focus.ids : null, includeUncertain: false
+        });
+      }
+      pick = pickRandom(fromView) || pickRandom(filterRestaurants({ search: "", provincia: null, zona: null, tipo: null, ids: null, includeUncertain: false }));
+    }
+    if (pick) openDrawer(pick.id);
+  }
+
+  function cardHtml(r) {
+    var fav = isFav(r.id);
+    var tipoLabel = r.tipo ? (TIPO_LABEL[r.tipo] || r.tipo) : "";
+    return (
+      '<li><article class="card" data-id="' + r.id + '">' +
+        '<div class="card-top">' +
+          '<button type="button" class="card-main" data-open="' + r.id + '">' +
+            '<div class="card-title-row"><h3 class="card-title">' + esc(r.nome) + '</h3>' +
+              (tipoLabel ? '<span class="card-tipo">' + esc(tipoLabel) + '</span>' : '') +
+            '</div>' +
+            '<p class="card-place">' + esc(placeLine(r)) + '</p>' +
+            (r.especialidade ? '<p class="card-spec">' + esc(r.especialidade) + '</p>' : '') +
+            (r.estado === "incerto" ? '<p class="card-uncertain">Por confirmar</p>' : '') +
+          '</button>' +
+          '<button type="button" class="fav-btn' + (fav ? ' saved' : '') + '" data-fav="' + r.id + '" aria-label="Guardar">' + ICON.heart + '</button>' +
+        '</div>' +
+        '<div style="margin-top:0.5rem">' + mapsRowHtml(r) + '</div>' +
+      '</article></li>'
+    );
+  }
+
+  function mapsRowHtml(r) {
+    var l = mapsLinks(r);
+    return '<div class="btn-row maps">' +
+      '<a href="' + l.google + '" target="_blank" rel="noreferrer">Google</a>' +
+      '<a href="' + l.apple + '" target="_blank" rel="noreferrer">Apple</a>' +
+      '<a href="' + l.waze + '" target="_blank" rel="noreferrer">Waze</a>' +
+    '</div>';
+  }
+
+  function emptyHtml(title, body) {
+    return '<div class="empty"><p class="title">' + esc(title) + '</p><p class="body">' + esc(body) + '</p></div>';
+  }
+
+  function regionIndexHtml() {
+    var html = '<div class="region-grid">';
+    REGION_GROUPS.forEach(function (group) {
+      var rows = group.provincias.map(function (p) {
+        var n = PROV_COUNTS.get(p) || 0;
+        if (!n) return "";
+        var active = state.provincia === p;
+        return '<li><button type="button" class="region-row' + (active ? ' active' : '') + '" data-region="' + esc(p) + '">' +
+          '<span class="name">' + esc(p) + '</span><span class="n">' + n + '</span></button></li>';
+      }).join("");
+      if (!rows) return;
+      html += '<section class="region-group"><h2>' + esc(group.title) + '</h2><ul>' + rows + '</ul></section>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function quickPicksHtml() {
+    var html = '';
+    pickGroups.forEach(function (group) {
+      html += '<section class="quick-group"><h2>' + esc(group.region) + '</h2><ul>';
+      group.items.forEach(function (item) {
+        html += '<li><button type="button" class="quick-row" data-want="' + esc(item.want) + '" data-ids="' + item.ids.join(",") + '">' +
+          '<span class="min0"><span class="want">' + esc(item.want) + '</span><span class="label">' + esc(item.label) + '</span></span>' +
+          ICON.chevron + '</button></li>';
+      });
+      html += '</ul></section>';
+    });
+    return html;
+  }
+
+  function listResultsHtml(list, zonas, tipos) {
+    var html = '<div class="list-head"><p class="list-count"><b>' + list.length + '</b> ' + (list.length === 1 ? "sítio" : "sítios") +
+      (state.provincia && !state.focus ? " · " + esc(state.provincia) : "") +
+      (state.focus ? " · " + esc(state.focus.label) : "") +
+      '</p><button type="button" class="clear-link" id="clear-btn">Limpar</button></div>';
+
+    if (!state.focus && zonas.length > 1) {
+      html += '<div class="chip-row">';
+      html += '<button type="button" class="chip' + (!state.zona ? ' active' : '') + '" data-zona="">Todas as zonas</button>';
+      zonas.forEach(function (z) {
+        html += '<button type="button" class="chip' + (state.zona === z ? ' active' : '') + '" data-zona="' + esc(z) + '">' + esc(z) + '</button>';
+      });
+      html += '</div>';
+    }
+    if (!state.focus && tipos.length > 1) {
+      html += '<div class="chip-row">';
+      html += '<button type="button" class="chip' + (!state.tipo ? ' active' : '') + '" data-tipo="">Qualquer tipo</button>';
+      tipos.forEach(function (t) {
+        html += '<button type="button" class="chip' + (state.tipo === t ? ' active' : '') + '" data-tipo="' + esc(t) + '">' + esc(TIPO_LABEL[t] || t) + '</button>';
+      });
+      html += '</div>';
+    }
+
+    if (!list.length) {
+      html += emptyHtml("Nenhum sítio com isto", "Tenta outra terra, outro nome, ou limpa os filtros.");
+    } else {
+      html += '<ul class="cards">' + list.map(cardHtml).join("") + '</ul>';
+    }
+    return html;
+  }
+
+  function render() {
+    var total = openCount();
+    var headerHtml =
+      '<header><div class="header-inner">' +
+        '<div><div class="eyebrow-row"><p class="eyebrow">livro de Catarino &amp; Cardoso</p><p class="count">' + total + ' sítios</p></div>' +
+        '<h1 class="display">As 100 Tascas</h1></div>' +
+        '<div class="search-wrap">' + ICON.search +
+          '<input id="search" type="text" placeholder="Um sítio, uma terra, uma especialidade" value="' + esc(state.search) + '" aria-label="Procurar">' +
+          '<button type="button" class="clear-search' + (state.search ? ' show' : '') + '" id="clear-search" aria-label="Limpar pesquisa">' + ICON.x + '</button>' +
+        '</div>' +
+        '<div class="loc-wrap">' + ICON.pin +
+          '<input id="loc-input" type="text" placeholder="Onde estás? (opcional, ex: Barcelos, Almada…)" value="' + esc(state.myLocation) + '" aria-label="Onde estás">' +
+          '<button type="button" class="clear-loc' + (state.myLocation ? ' show' : '') + '" id="clear-loc" aria-label="Limpar localização">' + ICON.x + '</button>' +
+        '</div>' +
+        (state.myLocation ? '<p class="loc-hint">O "Decide por mim" dá prioridade a sítios perto de "' + esc(state.myLocation) + '".</p>' : '') +
+        '<button type="button" class="decide-btn" id="decide-btn">' + ICON.shuffle + ' Decide por mim</button>' +
+        '<nav class="tabs" aria-label="Secções">' +
+          ['lista:Sítios', 'depressa:Depressa', 'guardados:Guardados'].map(function (pair) {
+            var parts = pair.split(":"); var id = parts[0], label = parts[1];
+            return '<button type="button" data-tab="' + id + '" class="' + (state.tab === id ? "active" : "") + '">' + label + '</button>';
+          }).join("") +
+        '</nav>' +
+      '</div></header>';
+
+    var mainHtml = '<main>';
+    if (state.tab === "depressa") {
+      mainHtml += '<p class="lede">Atalhos. Se só tens meio minuto, começa aqui.</p>' + quickPicksHtml();
+    } else if (state.tab === "guardados") {
+      var savedList = favIds.map(function (id) { return byId.get(id); }).filter(Boolean);
+      if (!savedList.length) {
+        mainHtml += emptyHtml("Nada guardado ainda", "O coração, na lista, fica nesta gaveta — para quando não apetece pensar.");
+      } else {
+        mainHtml += '<ul class="cards">' + savedList.map(cardHtml).join("") + '</ul>';
+      }
+    } else {
+      if (showingList()) {
+        var filtered = currentFiltered();
+        var zonas = state.provincia ? zonasFor(state.provincia) : [];
+        var tipos = tiposPresent(filtered);
+        mainHtml += listResultsHtml(filtered, zonas, tipos);
+      } else {
+        mainHtml += '<p class="lede">Escolhe uma terra, ou deixa a casa decidir.</p>' + regionIndexHtml();
+      }
+    }
+    mainHtml += '</main>';
+
+    app.innerHTML = headerHtml + mainHtml;
+    wireEvents();
+  }
+
+  function wireEvents() {
+    var searchEl = document.getElementById("search");
+    if (searchEl) {
+      searchEl.addEventListener("input", function (e) {
+        state.search = e.target.value; state.focus = null; state.tab = "lista";
+        var caret = e.target.selectionStart;
+        render();
+        var again = document.getElementById("search");
+        if (again) { again.focus(); again.setSelectionRange(caret, caret); }
+      });
+    }
+    var clearSearch = document.getElementById("clear-search");
+    if (clearSearch) clearSearch.addEventListener("click", function () { state.search = ""; render(); document.getElementById("search").focus(); });
+
+    var decideBtn = document.getElementById("decide-btn");
+    if (decideBtn) decideBtn.addEventListener("click", decide);
+
+    var locEl = document.getElementById("loc-input");
+    if (locEl) {
+      locEl.addEventListener("input", function (e) {
+        state.myLocation = e.target.value;
+        saveLoc(state.myLocation);
+        var caret = e.target.selectionStart;
+        render();
+        var again = document.getElementById("loc-input");
+        if (again) { again.focus(); again.setSelectionRange(caret, caret); }
+      });
+    }
+    var clearLoc = document.getElementById("clear-loc");
+    if (clearLoc) clearLoc.addEventListener("click", function () {
+      state.myLocation = ""; saveLoc(""); render();
+      var again = document.getElementById("loc-input");
+      if (again) again.focus();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-tab]"), function (btn) {
+      btn.addEventListener("click", function () { state.tab = btn.getAttribute("data-tab"); render(); });
+    });
+
+    var clearBtn = document.getElementById("clear-btn");
+    if (clearBtn) clearBtn.addEventListener("click", clearFilters);
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-region]"), function (btn) {
+      btn.addEventListener("click", function () {
+        var p = btn.getAttribute("data-region");
+        selectProvincia(state.provincia === p ? null : p);
+      });
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-zona]"), function (btn) {
+      btn.addEventListener("click", function () {
+        var z = btn.getAttribute("data-zona");
+        state.zona = (state.zona === z || !z) ? (state.zona === z ? null : null) : z;
+        state.zona = (btn.getAttribute("data-zona") === "") ? null : (state.zona);
+        // simpler: recompute directly
+        var chosen = btn.getAttribute("data-zona");
+        state.zona = chosen === "" ? null : (state.zona === chosen ? null : chosen);
+        render();
+      });
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-tipo]"), function (btn) {
+      btn.addEventListener("click", function () {
+        var chosen = btn.getAttribute("data-tipo");
+        state.tipo = chosen === "" ? null : (state.tipo === chosen ? null : chosen);
+        render();
+      });
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-want]"), function (btn) {
+      btn.addEventListener("click", function () {
+        var ids = btn.getAttribute("data-ids").split(",").map(Number);
+        onQuickPick({ want: btn.getAttribute("data-want"), ids: ids });
+      });
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-open]"), function (btn) {
+      btn.addEventListener("click", function () { openDrawer(Number(btn.getAttribute("data-open"))); });
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-fav]"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleFav(Number(btn.getAttribute("data-fav")));
+        render();
+        if (state.selectedId != null) renderDrawer();
+      });
+    });
+  }
+
+  // ---- Geocodificação sob demanda (Nominatim / OpenStreetMap) ----
+  var GEO_KEY = "guia-porta-10a-geo-v1";
+  function loadGeoCache() {
+    try { return JSON.parse(localStorage.getItem(GEO_KEY) || "{}"); } catch (e) { return {}; }
+  }
+  function saveGeoCache(cache) {
+    try { localStorage.setItem(GEO_KEY, JSON.stringify(cache)); } catch (e) {}
+  }
+  var geoCache = loadGeoCache();
+  var miniMapInstance = null;
+
+  function geocode(r) {
+    var cached = geoCache[r.id];
+    if (cached) return Promise.resolve(cached);
+    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(r.mapsQuery);
+    return fetch(url, { headers: { "Accept": "application/json" } })
+      .then(function (res) { if (!res.ok) throw new Error("geocode failed"); return res.json(); })
+      .then(function (data) {
+        if (!data || !data.length) throw new Error("sem resultado");
+        var coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        geoCache[r.id] = coords;
+        saveGeoCache(geoCache);
+        return coords;
+      });
+  }
+
+  function loadMiniMap(r) {
+    var container = document.getElementById("mini-map");
+    if (!container) return;
+    if (miniMapInstance) { miniMapInstance.remove(); miniMapInstance = null; }
+    if (typeof L === "undefined") {
+      container.innerHTML = '<div class="mini-map-status">Mapa indisponível offline.</div>';
+      return;
+    }
+    container.innerHTML = '<div class="mini-map-status">A localizar no mapa…</div>';
+    geocode(r).then(function (coords) {
+      if (state.selectedId !== r.id) return; // a gaveta já mudou entretanto
+      container.innerHTML = "";
+      miniMapInstance = L.map(container, { attributionControl: true, zoomControl: false }).setView([coords.lat, coords.lon], 15);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>'
+      }).addTo(miniMapInstance);
+      L.marker([coords.lat, coords.lon]).addTo(miniMapInstance);
+    }).catch(function () {
+      if (state.selectedId !== r.id) return;
+      container.innerHTML = '<div class="mini-map-status">Não foi possível localizar no mapa. Usa os links de "Como chegar" abaixo.</div>';
+    });
+  }
+
+  // ---- Drawer ----
+  var overlay = document.getElementById("overlay");
+  var drawer = document.getElementById("drawer");
+  var drawerBody = document.getElementById("drawer-body");
+
+  function openDrawer(id) {
+    state.selectedId = id;
+    renderDrawer();
+    overlay.classList.add("open");
+    drawer.classList.add("open");
+  }
+  function closeDrawer() {
+    overlay.classList.remove("open");
+    drawer.classList.remove("open");
+    state.selectedId = null;
+    if (miniMapInstance) { miniMapInstance.remove(); miniMapInstance = null; }
+  }
+  overlay.addEventListener("click", closeDrawer);
+
+  function renderDrawer() {
+    var r = byId.get(state.selectedId);
+    if (!r) { drawerBody.innerHTML = ""; return; }
+    var fav = isFav(r.id);
+    var tipoLabel = r.tipo ? (TIPO_LABEL[r.tipo] || r.tipo) : "";
+    var html =
+      '<div class="drawer-top">' +
+        '<div class="min0"><h2 class="drawer-title">' + esc(r.nome) + '</h2>' +
+          '<p class="drawer-place">' + esc(placeLine(r)) + '</p></div>' +
+        '<button type="button" class="fav-btn' + (fav ? ' saved' : '') + '" id="drawer-fav" aria-label="Guardar">' + ICON.heart + '</button>' +
+      '</div>' +
+      '<div class="drawer-tags">' +
+        (tipoLabel ? '<span class="tag">' + esc(tipoLabel) + '</span>' : '') +
+        (r.estado === "incerto" ? '<span class="tag uncertain">Por confirmar</span>' : '') +
+      '</div>' +
+      (r.especialidade ? '<p class="drawer-spec">' + esc(r.especialidade) + '</p>' : '') +
+      (r.morada ? '<p class="drawer-addr">' + esc(r.morada) + '</p>' : '<p class="drawer-addr">Sem morada completa — o mapa pesquisa pelo nome e a terra.</p>') +
+      (r.notas ? '<p class="drawer-notes">' + esc(r.notas) + '</p>' : '') +
+      '<div class="mini-map" id="mini-map"><div class="mini-map-status">A localizar no mapa…</div></div>' +
+      '<p class="row-label" style="margin-top:0.85rem">Como chegar</p>' + mapsRowHtml(r) +
+      '<div class="contact-row">' +
+        (r.telefone ? '<a href="' + telHref(r.telefone) + '">' + ICON.phone + ' Ligar</a>' : '<span class="disabled">' + ICON.phone + ' Sem telefone</span>') +
+        (r.website ? '<a href="' + websiteHref(r.website) + '" target="_blank" rel="noreferrer">' + ICON.globe + ' Site</a>' : '<span class="disabled">' + ICON.globe + ' Sem site</span>') +
+      '</div>';
+    drawerBody.innerHTML = html;
+    var favBtn = document.getElementById("drawer-fav");
+    if (favBtn) favBtn.addEventListener("click", function () { toggleFav(r.id); renderDrawer(); render(); });
+    loadMiniMap(r);
+  }
+
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDrawer(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
